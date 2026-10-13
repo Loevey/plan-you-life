@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>计划管理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --accent:#b8860b;--accent-soft:rgba(184,134,11,.13);
+  --bg:#f4f6fa;--card:rgba(255,255,255,.78);--sheet:rgba(255,255,255,.98);
+  --border:rgba(15,23,42,.09);--text:#1f2937;--muted:#6b7280;
+  --danger:#dc2626;--ok:#16a34a;--track:rgba(15,23,42,.08);
+  --shadow:0 6px 24px rgba(15,23,42,.07);
+}
+body.dark{
+  --bg:#0e1117;--card:rgba(28,34,46,.78);--sheet:rgba(24,29,38,.98);
+  --border:rgba(255,255,255,.09);--text:#e8ebf0;--muted:#98a2b3;
+  --track:rgba(255,255,255,.1);--shadow:0 6px 24px rgba(0,0,0,.45);
+}
+body{font-family:"PingFang SC","Microsoft YaHei",-apple-system,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;
+  transition:background .3s,color .3s}
+button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:13.5px;width:100%;padding:9px 12px;
+  border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);
+  outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+::placeholder{color:var(--muted);opacity:.7}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--accent-soft);border-radius:9px}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:var(--shadow)}
+.btn{padding:8px 16px;border-radius:10px;font-size:13px;font-weight:500;
+  display:inline-flex;align-items:center;gap:6px;transition:all .18s;white-space:nowrap}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.primary:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{border:1px solid var(--border);background:var(--card)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{color:var(--danger)}
+.btn.danger:hover{border-color:var(--danger)}
+.chip{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+.muted{color:var(--muted);font-size:12px}
+.empty{color:var(--muted);opacity:.5;font-size:12.5px;text-align:center;padding:24px 0}
+label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px 2px}
+.income{color:var(--ok)}.expense{color:var(--danger)}
+
+header{position:sticky;top:0;z-index:50;background:var(--card);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);padding:10px 16px 0}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.brand h1{font-size:16px;font-weight:600}
+.logo{color:var(--accent);font-size:18px}
+.spacer{flex:1}
+.points-badge{font-size:13px;font-weight:600;color:var(--accent);
+  background:var(--accent-soft);padding:5px 13px;border-radius:99px;cursor:pointer}
+.points-badge:hover{filter:brightness(.95)}
+.icon-btn{width:34px;height:34px;border-radius:10px;border:1px solid var(--border);
+  display:grid;place-items:center;font-size:15px;transition:all .18s}
+.icon-btn:hover{border-color:var(--accent);background:var(--accent-soft)}
+
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-bottom:8px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:7px 15px;border-radius:9px;font-size:13px;color:var(--muted);
+  white-space:nowrap;transition:all .18s}
+.tab:hover{background:var(--accent-soft);color:var(--accent)}
+.tab.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+main{max-width:1100px;margin:0 auto;padding:16px}
+.page{display:none}.page.active{display:block}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.toolbar input{width:auto;flex:1;min-width:140px;max-width:240px}
+.toolbar select{width:auto;flex:0 0 auto;min-width:118px}
+
+.quad-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.quad{padding:14px;min-height:200px;display:flex;flex-direction:column;transition:all .2s}
+.quad.over{border-color:var(--accent);background:var(--accent-soft)}
+.quad header{display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:10px;background:none;border:none;padding:0;position:static;backdrop-filter:none}
+.quad h3{font-size:13px;font-weight:600;color:var(--accent)}
+.cnt{font-size:11px;padding:1px 9px;border-radius:99px;background:var(--accent-soft);
+  color:var(--accent);font-weight:600}
+.qlist{flex:1;display:flex;flex-direction:column;gap:7px;overflow-y:auto;max-height:52vh}
+
+.task{display:flex;align-items:flex-start;gap:9px;padding:10px;border-radius:10px;
+  border:1px solid var(--border);background:var(--card);cursor:pointer;transition:all .18s}
+.task:hover{border-color:var(--accent)}
+.task.dragging{opacity:.4}
+.task .grow{flex:1;min-width:0}
+.task .name{font-size:13px;line-height:1.45;word-break:break-word}
+.task.done .name{text-decoration:line-through;opacity:.5}
+.task .meta{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:4px}
+.task .pts{font-size:12px;font-weight:600;color:var(--accent);flex-shrink:0}
+
+.list-group{padding:14px;margin-bottom:12px;transition:all .2s}
+.list-group.over{border-color:var(--accent);background:var(--accent-soft)}
+.list-group header{display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:10px;background:none;border:none;padding:0;position:static;backdrop-filter:none}
+.list-group h3{font-size:13px;font-weight:600;color:var(--accent)}
+.list-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  border:1px solid var(--border);background:var(--card);margin-bottom:6px;cursor:pointer;transition:all .18s}
+.list-row:last-child{margin-bottom:0}
+.list-row:hover{border-color:var(--accent)}
+.list-row.dragging{opacity:.4}
+.list-row .check{margin-top:0}
+.list-row .lname{flex:1;min-width:0;font-size:13px;word-break:break-word}
+.list-row .lmeta{display:flex;gap:5px;align-items:center;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.list-row .lmeta .pts{font-size:12px;font-weight:600;color:var(--accent);flex-shrink:0}
+
+.check{width:19px;height:19px;border-radius:50%;border:2px solid var(--accent);
+  flex-shrink:0;margin-top:2px;position:relative;transition:all .18s}
+.check:hover{transform:scale(1.15)}
+.check.on{background:var(--accent)}
+.check.on::after{content:'';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-55%) rotate(45deg);width:4px;height:8px;
+  border-right:2px solid #fff;border-bottom:2px solid #fff}
+
+.project{padding:16px;margin-bottom:12px}
+.project h4{font-size:15px;font-weight:600;margin-bottom:6px;word-break:break-word}
+.project.done{opacity:.55}
+.bar{height:6px;border-radius:99px;background:var(--track);overflow:hidden;margin:10px 0 6px}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.subs{margin-top:10px;display:flex;flex-direction:column;gap:2px}
+.sub{display:flex;align-items:center;gap:9px;padding:7px 4px;font-size:13px;
+  border-bottom:1px solid var(--border)}
+.sub:last-child{border-bottom:none}
+.sub.done span{text-decoration:line-through;opacity:.5}
+.sub .check{width:16px;height:16px;margin-top:0}
+.acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.cal-head h3{font-size:16px;font-weight:600;color:var(--accent)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow{text-align:center;font-size:11px;color:var(--muted);padding:6px 0;font-weight:600}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;border-radius:10px;cursor:pointer;font-size:13px;
+  border:1px solid transparent;transition:all .18s}
+.cal-day:hover{background:var(--accent-soft)}
+.cal-day.today{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.cal-day .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);display:block}
+
+.habit{display:flex;align-items:center;gap:12px;padding:14px;margin-bottom:10px}
+.habit .info{flex:1;min-width:0}
+.habit .info b{font-size:14px;font-weight:600;display:block;word-break:break-word}
+.habit .info span{font-size:12px;color:var(--muted)}
+
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{padding:18px 12px;text-align:center}
+.stat p{font-size:11.5px;color:var(--muted);margin-bottom:6px}
+.stat b{font-size:23px;font-weight:700;color:var(--accent)}
+
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal.show{display:flex}
+.sheet{background:var(--sheet);border:1px solid var(--border);border-radius:18px;
+  padding:22px;width:100%;max-width:460px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow)}
+.sheet h3{font-size:17px;font-weight:600;color:var(--accent);margin-bottom:18px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sheet .header-actions{display:flex;gap:6px}
+.sheet .field{margin-bottom:13px}
+.sheet .actions{display:flex;gap:9px;justify-content:flex-end;margin-top:20px}
+.sheet .actions .left{margin-right:auto}
+.sheet .section-title{font-size:12px;color:var(--muted);margin:16px 0 8px;
+  padding-top:14px;border-top:1px solid var(--border);font-weight:600;
+  display:flex;justify-content:space-between;align-items:center}
+.scroll-box{max-height:340px;overflow-y:auto}
+.color-picker{display:flex;gap:10px;flex-wrap:wrap}
+.accent-dot{width:28px;height:28px;border-radius:50%;border:3px solid transparent;cursor:pointer}
+.accent-dot.on{border-color:var(--text);transform:scale(1.12)}
+
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:300;
+  background:var(--sheet);border:1px solid var(--border);color:var(--text);
+  padding:10px 22px;border-radius:12px;font-size:13px;font-weight:500;
+  box-shadow:var(--shadow);pointer-events:none}
+
+@media(max-width:680px){
+  main{padding:12px}
+  .quad-grid{gap:8px}
+  .quad{padding:10px;min-height:170px}
+  .quad h3{font-size:12px}
+  .task{padding:8px 9px;gap:7px}
+  .task .name{font-size:12.5px}
+  .list-group{padding:10px}
+  .list-row{padding:9px 10px;gap:8px}
+  .list-row .lname{font-size:12.5px}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .toolbar input{max-width:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="logo">◆</span>
+    <h1>计划管理</h1>
+    <div class="spacer"></div>
+    <span class="points-badge" id="pointsBadge">0 分</span>
+    <button class="icon-btn" id="themeBtn">🌙</button>
+    <button class="icon-btn" id="colorBtn">🎨</button>
+  </div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="plan">四象限</button>
+    <button class="tab" data-tab="list">任务列表</button>
+    <button class="tab" data-tab="projects">项目</button>
+    <button class="tab" data-tab="calendar">日历</button>
+    <button class="tab" data-tab="habits">习惯</button>
+    <button class="tab" data-tab="stats">统计</button>
+  </nav>
+</header>
+
+<main>
+  <section class="page active" id="page-plan">
+    <div class="toolbar">
+      <button class="btn primary" id="addTaskBtn">＋ 新建任务</button>
+      <button class="btn ghost" id="taskHistoryBtn">历史任务</button>
+      <button class="btn ghost" id="shopBtn">商城</button>
+      <input id="taskSearch" placeholder="搜索任务...">
+    </div>
+    <div class="quad-grid">
+      <div class="quad card" data-quad="q1">
+        <header><h3>重要紧急</h3><span class="cnt" id="cnt-q1">0</span></header>
+        <div class="qlist" id="list-q1"></div>
+      </div>
+      <div class="quad card" data-quad="q2">
+        <header><h3>重要不紧急</h3><span class="cnt" id="cnt-q2">0</span></header>
+        <div class="qlist" id="list-q2"></div>
+      </div>
+      <div class="quad card" data-quad="q3">
+        <header><h3>紧急不重要</h3><span class="cnt" id="cnt-q3">0</span></header>
+        <div class="qlist" id="list-q3"></div>
+      </div>
+      <div class="quad card" data-quad="q4">
+        <header><h3>不紧急不重要</h3><span class="cnt" id="cnt-q4">0</span></header>
+        <div class="qlist" id="list-q4"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="page-list">
+    <div class="toolbar">
+      <button class="btn primary" id="addTaskBtn2">＋ 新建任务</button>
+      <button class="btn ghost" id="taskHistoryBtn2">历史任务</button>
+      <button class="btn ghost" id="shopBtn2">商城</button>
+      <select id="listSort">
+        <option value="created">创建时间</option>
+        <option value="deadline">截止时间</option>
+        <option value="points">积分高低</option>
+        <option value="difficulty">难度优先</option>
+      </select>
+      <input id="taskSearch2" placeholder="搜索任务...">
+    </div>
+    <div id="taskListGrouped"></div>
+  </section>
+
+  <section class="page" id="page-projects">
+    <div class="toolbar">
+      <button class="btn primary" id="addProjectBtn">＋ 新建项目</button>
+    </div>
+    <div id="projectList"></div>
+  </section>
+
+  <section class="page" id="page-calendar">
+    <div class="card" style="padding:18px">
+      <div class="cal-head">
+        <button class="btn ghost" id="prevMonth">‹</button>
+        <h3 id="calTitle"></h3>
+        <button class="btn ghost" id="nextMonth">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </section>
+
+  <section class="page" id="page-habits">
+    <div class="toolbar">
+      <button class="btn primary" id="addHabitBtn">＋ 新建习惯</button>
+    </div>
+    <div id="habitList"></div>
+  </section>
+
+  <section class="page" id="page-stats">
+    <div class="stat-grid">
+      <div class="card stat"><p>完成任务</p><b id="stTasks">0</b></div>
+      <div class="card stat"><p>总积分</p><b id="stPoints">0</b></div>
+      <div class="card stat"><p>项目数</p><b id="stProjects">0</b></div>
+      <div class="card stat"><p>习惯打卡</p><b id="stChecks">0</b></div>
+    </div>
+  </section>
+</main>
+
+<!-- 任务弹窗 -->
+<div class="modal" id="taskModal">
+  <div class="sheet">
+    <h3 id="taskModalTitle">新建任务</h3>
+    <input type="hidden" id="taskId">
+    <div class="field"><label>任务名称</label><input id="taskName" placeholder="要做什么？"></div>
+    <div class="field"><label>象限</label>
+      <select id="taskQuad">
+        <option value="q1">重要紧急</option>
+        <option value="q2" selected>重要不紧急</option>
+        <option value="q3">紧急不重要</option>
+        <option value="q4">不紧急不重要</option>
+      </select>
+    </div>
+    <div class="field"><label>难度</label>
+      <select id="taskDiff">
+        <option value="easy">简单</option>
+        <option value="medium" selected>中等</option>
+        <option value="hard">困难</option>
+      </select>
+    </div>
+    <div class="field"><label>积分</label><input type="number" id="taskPoints" value="10" min="0"></div>
+    <div class="field"><label>截止时间</label><input type="datetime-local" id="taskDeadline"></div>
+    <div class="field"><label>标签</label><input id="taskTag" placeholder="学习 / 工作 / 生活"></div>
+    <div class="actions">
+      <button class="btn ghost danger left" id="taskDelete" style="display:none">删除</button>
+      <button class="btn ghost" data-close>取消</button>
+      <button class="btn primary" id="taskSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 项目弹窗 -->
+<div class="modal" id="projectModal">
+  <div class="sheet">
+    <h3 id="projectModalTitle">新建项目</h3>
+    <input type="hidden" id="projectId">
+    <div class="field"><label>项目名称</label><input id="projectName"></div>
+    <div class="field"><label>开始日期</label><input type="date" id="projectStart"></div>
+    <div class="field"><label>截止日期</label><input type="date" id="projectDeadline"></div>
+    <div class="field"><label>完成积分</label><input type="number" id="projectPoints" value="20" min="0"></div>
+    <div class="field"><label>描述</label><textarea id="projectDesc" rows="2"></textarea></div>
+    <div class="actions">
+      <button class="btn ghost" data-close>取消</button>
+      <button class="btn primary" id="projectSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 习惯弹窗 -->
+<div class="modal" id="habitModal">
+  <div class="sheet">
+    <h3 id="habitModalTitle">新建习惯</h3>
+    <input type="hidden" id="habitId">
+    <div class="field"><label>习惯名称</label><input id="habitName"></div>
+    <div class="field"><label>每次打卡积分</label><input type="number" id="habitPoints" value="5" min="0"></div>
+    <div class="field">
+      <label>重复周期</label>
+      <select id="habitRepeatType">
+        <option value="daily">每日</option>
+        <option value="weekly">每周指定星期</option>
+        <option value="monthly">每月指定日期</option>
+        <option value="once">指定某一天（单次）</option>
+        <option value="range">日期范围</option>
+      </select>
+    </div>
+    <div id="weeklyOptions" style="display:none;">
+      <label>选择星期</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <label class="chip" style="cursor:pointer;padding:6px 12px"><input type="checkbox" value="1" class="habit-week"> 一</label>
+        <label class="chip" style="cursor:pointer;padding:6px 12px"><input type="checkbox" value="2" class="habit-week"> 二</label>
+        <label class="chip" style="cursor:pointer;padding:6px 12px"><input type="checkbox" value="3" class="habit-week"> 三</label>
+        <label class="chip" style="cursor:pointer;padding:6px 12px"><input type="checkbox" value="4" class="habit-week"> 四</label>
+        <label class="chip" style="cursor:pointer;padding:6px 12px"><input type="checkbox" value="5" class="habit-week"> 五</label>
+        <label class="chip" style="cursor:pointer;padding:6px 12px"><input type="checkbox" value="6" class="habit-week"> 六</label>
+        <label class="chip" style="cursor:pointer;padding:6px 12px"><input type="checkbox" value="0" class="habit-week"> 日</label>
+      </div>
+    </div>
+    <div id="monthlyOptions" style="display:none;">
+      <label>日期（1-31）</label>
+      <input type="number" id="habitMonthDay" min="1" max="31" value="1">
+    </div>
+    <div id="onceOptions" style="display:none;">
+      <label>选择日期</label>
+      <input type="date" id="habitOnceDate">
+    </div>
+    <div id="rangeOptions" style="display:none;">
+      <label>开始日期</label><input type="date" id="habitStartDate">
+      <label style="margin-top:8px">截止日期</label><input type="date" id="habitEndDate">
+    </div>
+    <div class="field" style="margin-top:10px">
+      <label>开始时间（选填）</label><input type="time" id="habitStartTime">
+    </div>
+    <div class="field">
+      <label>结束时间（选填）</label><input type="time" id="habitEndTime">
+    </div>
+    <div class="actions">
+      <button class="btn ghost danger left" id="habitDelete" style="display:none">删除</button>
+      <button class="btn ghost" data-close>取消</button>
+      <button class="btn primary" id="habitSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 当日详情 -->
+<div class="modal" id="dayModal">
+  <div class="sheet">
+    <h3 id="dayTitle">当日详情</h3>
+    <div id="dayContent"></div>
+    <div class="actions"><button class="btn ghost" data-close>关闭</button></div>
+  </div>
+</div>
+
+<!-- 积分记录 -->
+<div class="modal" id="pointsModal">
+  <div class="sheet">
+    <h3>
+      积分记录
+      <div class="header-actions">
+        <button class="btn ghost" id="editTotalBtn" style="padding:4px 10px;font-size:11px">改总积分</button>
+      </div>
+    </h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;
+         padding:12px 14px;border-radius:10px;background:var(--accent-soft);margin-bottom:14px">
+      <span style="font-size:12px;color:var(--muted)">当前总积分</span>
+      <b style="color:var(--accent);font-size:20px" id="pointsModalTotal">0</b>
+    </div>
+    <div class="scroll-box" id="pointsLogList"></div>
+    <div class="actions"><button class="btn ghost" data-close>关闭</button></div>
+  </div>
+</div>
+
+<!-- 商城 -->
+<div class="modal" id="shopModal">
+  <div class="sheet">
+    <h3>
+      积分商城
+      <div class="header-actions">
+        <button class="btn primary" id="addShopBtn" style="padding:4px 10px;font-size:11px">＋ 添加奖励</button>
+      </div>
+    </h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;
+         padding:12px 14px;border-radius:10px;background:var(--accent-soft);margin-bottom:14px">
+      <span style="font-size:12px;color:var(--muted)">可用积分</span>
+      <b style="color:var(--accent);font-size:20px" id="shopPoints">0</b>
+    </div>
+    <div class="scroll-box" id="shopList" style="max-height:260px"></div>
+    <div class="section-title">
+      <span>兑换记录</span>
+      <span class="muted" id="redeemCount">0 条</span>
+    </div>
+    <div class="scroll-box" id="redeemHistory" style="max-height:180px"></div>
+    <div class="actions"><button class="btn ghost" data-close>关闭</button></div>
+  </div>
+</div>
+
+<!-- 奖励编辑 -->
+<div class="modal" id="rewardModal">
+  <div class="sheet">
+    <h3 id="rewardModalTitle">添加奖励</h3>
+    <input type="hidden" id="rewardId">
+    <div class="field"><label>奖励名称</label><input id="rewardName"></div>
+    <div class="field"><label>所需积分</label><input type="number" id="rewardCost" value="50" min="1"></div>
+    <div class="field"><label>库存（-1 不限）</label><input type="number" id="rewardStock" value="-1"></div>
+    <div class="actions">
+      <button class="btn ghost danger left" id="rewardDelete" style="display:none">删除</button>
+      <button class="btn ghost" data-close>取消</button>
+      <button class="btn primary" id="rewardSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 兑换记录编辑 -->
+<div class="modal" id="redeemModal">
+  <div class="sheet">
+    <h3>编辑兑换记录</h3>
+    <input type="hidden" id="redeemIndex">
+    <div class="field"><label>奖励名称</label><input id="redeemName"></div>
+    <div class="field"><label>消耗积分</label><input type="number" id="redeemCost" min="0"></div>
+    <div class="field"><label>兑换时间</label><input type="datetime-local" id="redeemTime"></div>
+    <div class="actions">
+      <button class="btn ghost danger left" id="redeemDelete">删除</button>
+      <button class="btn ghost" data-close>取消</button>
+      <button class="btn primary" id="redeemSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 历史任务 -->
+<div class="modal" id="taskHistoryModal">
+  <div class="sheet">
+    <h3>
+      历史任务
+      <span class="muted" id="taskHistoryCount" style="font-size:12px;font-weight:400"></span>
+    </h3>
+    <p class="muted" style="margin-bottom:12px;font-size:12px">点击左侧圆圈可恢复任务到原象限</p>
+    <div class="scroll-box" id="taskHistoryList"></div>
+    <div class="actions"><button class="btn ghost" data-close>关闭</button></div>
+  </div>
+</div>
+
+<!-- 配色 -->
+<div class="modal" id="colorModal">
+  <div class="sheet" style="max-width:340px">
+    <h3>主题配色</h3>
+    <div class="color-picker" id="colorPicker"></div>
+    <div class="actions"><button class="btn ghost" data-close>关闭</button></div>
+  </div>
+</div>
+
+<script>
+/* ========== 数据 ========== */
+const KEY = 'plan_app_v9';
+const DEF = { tasks:[], projects:[], habits:[], points:0, pointsLog:[], shopItems:[], redemptions:[], theme:'light', accent:'#b8860b', tab:'plan' };
+const S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || '{}'));
+const save = () => localStorage.setItem(KEY, JSON.stringify(S));
+
+/* ========== 工具 ========== */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const uid = () => Date.now() + Math.floor(Math.random()*1000);
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayStr = () => ymd(new Date());
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hexA = (h,a) => { const n = parseInt(h.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; };
+const fmtTime = t => t ? t.slice(0,16).replace('T',' ') : '';
+
+function toast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+const QUADS = ['q1','q2','q3','q4'];
+const QUAD_NAME = { q1:'重要紧急', q2:'重要不紧急', q3:'紧急不重要', q4:'不紧急不重要' };
+const DIFF = { easy:'简单', medium:'中等', hard:'困难' };
+const DIFF_ORDER = { hard:0, medium:1, easy:2 };
+const ACCENTS = ['#b8860b','#b91c1c','#7e22ce','#0284c7','#0f766e','#db2777'];
+
+/* ========== 积分 ========== */
+function addPoints(delta, reason){
+  if (!delta) return;
+  S.points += delta;
+  S.pointsLog.unshift({ id:uid(), delta, reason:reason||'积分变化', time:new Date().toISOString() });
+  if (S.pointsLog.length > 500) S.pointsLog = S.pointsLog.slice(0,500);
+  save(); renderHeader();
+}
+function renderHeader(){
+  $('#pointsBadge').textContent = S.points + ' 分';
+  const st = $('#stPoints'); if (st) st.textContent = S.points;
+  const sm = $('#shopPoints'); if (sm) sm.textContent = S.points;
+  const pm = $('#pointsModalTotal'); if (pm) pm.textContent = S.points;
+}
+function openPointsModal(){ renderPointsLog(); $('#pointsModal').classList.add('show'); }
+function renderPointsLog(){
+  const box = $('#pointsLogList');
+  if (!S.pointsLog.length) { box.innerHTML = '<p class="empty" style="padding:30px 0">暂无积分记录</p>'; return; }
+  box.innerHTML = S.pointsLog.map(log => `
+    <div class="list-row" style="cursor:default">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;word-break:break-word">${esc(log.reason)}</div>
+        <div class="muted">${fmtTime(log.time)}</div>
+      </div>
+      <span class="${log.delta>0?'income':'expense'}" style="font-weight:700;font-size:13px;flex-shrink:0">
+        ${log.delta>0?'+':''}${log.delta}
+      </span>
+      <button class="muted" data-editlog="${log.id}" style="font-size:11px;padding:2px 6px;flex-shrink:0;cursor:pointer">编辑</button>
+      <button class="muted" data-dellog="${log.id}" style="font-size:16px;flex-shrink:0;cursor:pointer">×</button>
+    </div>
+  `).join('');
+}
+function editPointsLog(id){
+  const log = S.pointsLog.find(x => x.id === id);
+  if (!log) return;
+  const v = prompt('修改积分变化值：', log.delta);
+  if (v === null) return;
+  const d = parseInt(v);
+  if (isNaN(d)) return toast('无效数值');
+  S.points += d - log.delta;
+  log.delta = d;
+  save(); renderPointsLog(); renderHeader();
+  toast('已更新');
+}
+function deletePointsLog(id){
+  const log = S.pointsLog.find(x => x.id === id);
+  if (!log) return;
+  if (!confirm(`删除这条记录？（总积分将同步调整 ${log.delta>0?'-':'+'}${Math.abs(log.delta)}）`)) return;
+  S.points -= log.delta;
+  S.pointsLog = S.pointsLog.filter(x => x.id !== id);
+  save(); renderPointsLog(); renderHeader();
+  toast('已删除');
+}
+function editTotalPoints(){
+  const v = prompt('输入新的总积分：', S.points);
+  if (v === null) return;
+  const n = parseInt(v);
+  if (isNaN(n)) return toast('无效数值');
+  const diff = n - S.points;
+  if (diff !== 0) {
+    S.points = n;
+    S.pointsLog.unshift({ id:uid(), delta:diff, reason:'手动调整总积分', time:new Date().toISOString() });
+    save(); renderPointsLog(); renderHeader();
+  }
+  toast('已更新');
+}
+
+/* ========== 商城 ========== */
+function renderShop(){
+  const box = $('#shopList');
+  if (!S.shopItems.length) { box.innerHTML = '<p class="empty" style="padding:20px 0">暂无奖励，点击上方添加</p>'; }
+  else {
+    box.innerHTML = S.shopItems.map(item => {
+      const can = S.points >= item.cost && (item.stock < 0 || item.stock > 0);
+      const stockText = item.stock < 0 ? '不限' : (item.stock > 0 ? `剩 ${item.stock}` : '已兑完');
+      return `<div class="list-row" style="cursor:default">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;word-break:break-word">${esc(item.name)}</div>
+          <div class="muted">库存：${stockText}</div>
+        </div>
+        <span class="chip" style="flex-shrink:0">${item.cost} 分</span>
+        <button class="btn ghost" data-editshop="${item.id}" style="padding:4px 10px;font-size:11px;flex-shrink:0">编辑</button>
+        <button class="btn ghost danger" data-delshop="${item.id}" style="padding:4px 10px;font-size:11px;flex-shrink:0">删除</button>
+        <button class="btn primary" data-redeem="${item.id}" style="padding:4px 12px;font-size:11px;flex-shrink:0" ${can?'':'disabled'}>兑换</button>
+      </div>`;
+    }).join('');
+  }
+  const rBox = $('#redeemHistory');
+  $('#redeemCount').textContent = S.redemptions.length + ' 条';
+  if (!S.redemptions.length) { rBox.innerHTML = '<p class="muted" style="padding:10px 0">暂无兑换记录</p>'; }
+  else {
+    rBox.innerHTML = S.redemptions.slice().reverse().map((r,i) => {
+      const idx = S.redemptions.length - 1 - i;
+      return `<div class="list-row" style="cursor:default">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px">${esc(r.name)} <span class="muted">(${r.cost}分)</span></div>
+          <div class="muted">${fmtTime(r.time)}</div>
+        </div>
+        <button class="muted" data-editredeem="${idx}" style="font-size:11px;flex-shrink:0;cursor:pointer">编辑</button>
+        <button class="muted" data-delredeem="${idx}" style="font-size:16px;flex-shrink:0;cursor:pointer">×</button>
+      </div>`;
+    }).join('');
+  }
+}
+function openShopModal(){ renderHeader(); renderShop(); $('#shopModal').classList.add('show'); }
+function openRewardModal(id){
+  const isNew = !id;
+  const item = isNew ? null : S.shopItems.find(x => x.id === id);
+  $('#rewardModalTitle').textContent = isNew ? '添加奖励' : '编辑奖励';
+  $('#rewardDelete').style.display = isNew ? 'none' : 'inline-flex';
+  $('#rewardId').value = id || '';
+  $('#rewardName').value = item ? item.name : '';
+  $('#rewardCost').value = item ? item.cost : 50;
+  $('#rewardStock').value = item ? item.stock : -1;
+  $('#rewardModal').classList.add('show');
+}
+function saveReward(){
+  const name = $('#rewardName').value.trim();
+  const cost = parseInt($('#rewardCost').value);
+  let stock = parseInt($('#rewardStock').value);
+  if (isNaN(stock)) stock = -1;
+  if (!name) return toast('请输入奖励名称');
+  if (isNaN(cost) || cost <= 0) return toast('请输入有效积分');
+  const id = $('#rewardId').value;
+  if (id) { const item = S.shopItems.find(x => x.id === +id); if (item) { item.name=name; item.cost=cost; item.stock=stock; } }
+  else { S.shopItems.push({ id:uid(), name, cost, stock }); }
+  save(); renderShop(); $('#rewardModal').classList.remove('show'); toast('已保存');
+}
+function deleteReward(){
+  const id = +$('#rewardId').value;
+  if (!id || !confirm('确定删除这个奖励吗？')) return;
+  S.shopItems = S.shopItems.filter(x => x.id !== id);
+  save(); renderShop(); $('#rewardModal').classList.remove('show'); toast('已删除');
+}
+function deleteRewardById(id){
+  if (!confirm('确定删除这个奖励吗？')) return;
+  S.shopItems = S.shopItems.filter(x => x.id !== id);
+  save(); renderShop(); toast('已删除');
+}
+function redeemItem(id){
+  const item = S.shopItems.find(x => x.id === id);
+  if (!item) return;
+  if (S.points < item.cost) return toast('积分不足');
+  if (item.stock === 0) return toast('已兑完');
+  if (!confirm(`确认消耗 ${item.cost} 积分兑换「${item.name}」？`)) return;
+  addPoints(-item.cost, `兑换奖励：${item.name}`);
+  if (item.stock > 0) item.stock--;
+  S.redemptions.unshift({ id:uid(), name:item.name, cost:item.cost, time:new Date().toISOString() });
+  save(); renderShop(); renderHeader(); toast('兑换成功');
+}
+function openRedeemModal(idx){
+  const r = S.redemptions[idx];
+  if (!r) return;
+  $('#redeemIndex').value = idx;
+  $('#redeemName').value = r.name || '';
+  $('#redeemCost').value = r.cost || 0;
+  $('#redeemTime').value = r.time ? r.time.slice(0,16) : '';
+  $('#redeemModal').classList.add('show');
+}
+function saveRedeem(){
+  const idx = +$('#redeemIndex').value;
+  const r = S.redemptions[idx];
+  if (!r) return;
+  const name = $('#redeemName').value.trim();
+  const cost = parseInt($('#redeemCost').value);
+  const time = $('#redeemTime').value ? new Date($('#redeemTime').value).toISOString() : r.time;
+  if (!name) return toast('请输入奖励名称');
+  if (isNaN(cost) || cost < 0) return toast('请输入有效积分');
+  r.name = name; r.cost = cost; r.time = time;
+  save(); renderShop(); $('#redeemModal').classList.remove('show'); toast('已更新');
+}
+function deleteRedeem(){
+  const idx = +$('#redeemIndex').value;
+  if (isNaN(idx) || !S.redemptions[idx]) return;
+  if (!confirm('删除此兑换记录？（不会退还积分）')) return;
+  S.redemptions.splice(idx, 1);
+  save(); renderShop(); $('#redeemModal').classList.remove('show'); toast('已删除');
+}
+function deleteRedeemById(idx){
+  if (!S.redemptions[idx]) return;
+  if (!confirm('删除此兑换记录？（不会退还积分）')) return;
+  S.redemptions.splice(idx, 1);
+  save(); renderShop(); toast('已删除');
+}
+
+/* ========== 任务历史 ========== */
+function renderTaskHistory(){
+  const box = $('#taskHistoryList');
+  const done = S.tasks.filter(t => t.done).sort((a,b) => new Date(b.doneAt||0) - new Date(a.doneAt||0));
+  $('#taskHistoryCount').textContent = `共 ${done.length} 条`;
+  if (!done.length) { box.innerHTML = '<p class="empty" style="padding:30px 0">暂无已完成任务</p>'; return; }
+  box.innerHTML = done.map(t => `
+    <div class="task done" style="cursor:default">
+      <button class="check on" data-restore="${t.id}"></button>
+      <div class="grow">
+        <div class="name">${esc(t.name)}</div>
+        <div class="meta">
+          <span class="chip">${QUAD_NAME[t.quadrant]||''}</span>
+          ${t.tag?`<span class="chip">${esc(t.tag)}</span>`:''}
+          <span class="muted">${t.doneAt?fmtTime(t.doneAt)+' 完成':'已完成'}</span>
+        </div>
+      </div>
+      <button class="btn ghost" data-editth="${t.id}" style="padding:3px 9px;font-size:11px;flex-shrink:0">编辑</button>
+      <button class="btn ghost danger" data-delth="${t.id}" style="padding:3px 9px;font-size:11px;flex-shrink:0">删除</button>
+    </div>
+  `).join('');
+}
+function openTaskHistoryModal(){ renderTaskHistory(); $('#taskHistoryModal').classList.add('show'); }
+function restoreTask(id){
+  const t = S.tasks.find(x => x.id === id);
+  if (!t) return;
+  t.done = false; t.doneAt = null;
+  addPoints(-t.points, `恢复任务：${t.name}`);
+  save(); refreshTasks(); renderTaskHistory(); renderStats(); toast('已恢复');
+}
+function deleteHistoryTask(id){
+  const t = S.tasks.find(x => x.id === id);
+  if (!t || !confirm(`确定永久删除「${t.name}」吗？`)) return;
+  S.tasks = S.tasks.filter(x => x.id !== id);
+  save(); refreshTasks(); renderTaskHistory(); renderStats(); toast('已删除');
+}
+
+/* ========== 主题 ========== */
+function applyTheme(){
+  document.body.classList.toggle('dark', S.theme === 'dark');
+  document.documentElement.style.setProperty('--accent', S.accent);
+  document.documentElement.style.setProperty('--accent-soft', hexA(S.accent, .13));
+  $('#themeBtn').textContent = S.theme === 'dark' ? '☀️' : '🌙';
+  $$('.accent-dot').forEach(d => d.classList.toggle('on', d.dataset.color === S.accent));
+}
+
+/* ========== 标签页 ========== */
+function switchTab(name){
+  S.tab = name; save();
+  $$('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  $$('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + name));
+  if (name === 'list')     renderTaskList();
+  if (name === 'calendar') renderCalendar();
+  if (name === 'stats')    renderStats();
+  if (name === 'projects') renderProjects();
+  if (name === 'habits')   renderHabits();
+}
+
+/* ========== 任务（四象限） ========== */
+function renderTasks(){
+  const q = ($('#taskSearch').value || '').toLowerCase();
+  const active = S.tasks.filter(t => !t.done && (!q || t.name.toLowerCase().includes(q) || (t.tag||'').toLowerCase().includes(q)));
+  QUADS.forEach(quad => {
+    const items = active.filter(t => t.quadrant === quad);
+    $('#cnt-' + quad).textContent = items.length;
+    $('#list-' + quad).innerHTML = items.length ? items.map(taskCard).join('') : '<p class="empty">暂无任务</p>';
+  });
+}
+function taskCard(t){
+  const dl = t.deadline ? `<span class="muted">⏰ ${t.deadline.slice(5,16).replace('T',' ')}</span>` : '';
+  const tag = t.tag ? `<span class="chip">${esc(t.tag)}</span>` : '';
+  const diff = t.difficulty ? `<span class="chip">${DIFF[t.difficulty]}</span>` : '';
+  return `<div class="task" draggable="true" data-id="${t.id}">
+    <button class="check" data-act="toggle"></button>
+    <div class="grow">
+      <div class="name">${esc(t.name)}</div>
+      ${(tag||dl||diff)?`<div class="meta">${tag}${diff}${dl}</div>`:''}
+    </div>
+    <span class="pts">+${t.points}</span>
+  </div>`;
+}
+
+/* ========== 任务（列表） ========== */
+let listSort = 'created';
+function renderTaskList(){
+  const box = $('#taskListGrouped');
+  if (!box) return;
+  const q = ($('#taskSearch2').value || '').toLowerCase();
+  let active = S.tasks.filter(t => !t.done && (!q || t.name.toLowerCase().includes(q) || (t.tag||'').toLowerCase().includes(q)));
+  active = active.slice().sort((a,b) => {
+    if (listSort === 'deadline') { const da=a.deadline||'9999', db=b.deadline||'9999'; return da<db?-1:da>db?1:0; }
+    if (listSort === 'points') return (b.points||0)-(a.points||0);
+    if (listSort === 'difficulty') return (DIFF_ORDER[a.difficulty]??1)-(DIFF_ORDER[b.difficulty]??1);
+    return new Date(b.createdAt||0) - new Date(a.createdAt||0);
+  });
+  box.innerHTML = QUADS.map(quad => {
+    const items = active.filter(t => t.quadrant === quad);
+    return `<div class="card list-group" data-quad="${quad}">
+      <header><h3>${QUAD_NAME[quad]}</h3><span class="cnt">${items.length}</span></header>
+      ${items.length ? items.map(listRow).join('') : '<p class="empty" style="padding:14px 0">暂无任务</p>'}
+    </div>`;
+  }).join('');
+}
+function listRow(t){
+  const tag = t.tag ? `<span class="chip">${esc(t.tag)}</span>` : '';
+  const diff = `<span class="chip">${DIFF[t.difficulty]||'中等'}</span>`;
+  const dl = t.deadline ? `<span class="muted">${t.deadline.slice(5,16).replace('T',' ')}</span>` : '';
+  return `<div class="list-row" draggable="true" data-id="${t.id}">
+    <button class="check" data-act="toggle"></button>
+    <span class="lname">${esc(t.name)}</span>
+    <div class="lmeta">${tag}${diff}${dl}<span class="pts">+${t.points}</span></div>
+  </div>`;
+}
+function refreshTasks(){ renderTasks(); renderTaskList(); }
+function toggleTask(id){
+  const t = S.tasks.find(x => x.id === id);
+  if (!t) return;
+  t.done = !t.done;
+  if (t.done) { t.doneAt = new Date().toISOString(); addPoints(t.points, `完成任务：${t.name}`); toast(`+${t.points} 积分`); }
+  else { t.doneAt = null; addPoints(-t.points, `取消完成：${t.name}`); }
+  save(); refreshTasks(); renderStats();
+}
+function openTaskModal(id){
+  const isNew = !id;
+  $('#taskModalTitle').textContent = isNew ? '新建任务' : '编辑任务';
+  $('#taskDelete').style.display = isNew ? 'none' : 'inline-flex';
+  const t = isNew ? null : S.tasks.find(x => x.id === id);
+  $('#taskId').value = id || '';
+  $('#taskName').value = t ? t.name : '';
+  $('#taskQuad').value = t ? t.quadrant : 'q2';
+  $('#taskDiff').value = t ? (t.difficulty||'medium') : 'medium';
+  $('#taskPoints').value = t ? t.points : 10;
+  $('#taskDeadline').value = t && t.deadline ? t.deadline : '';
+  $('#taskTag').value = t ? (t.tag||'') : '';
+  $('#taskModal').classList.add('show');
+  setTimeout(() => $('#taskName').focus(), 100);
+}
+function saveTask(){
+  const name = $('#taskName').value.trim();
+  if (!name) return toast('请输入任务名称');
+  const id = $('#taskId').value;
+  const data = {
+    name,
+    quadrant: $('#taskQuad').value,
+    difficulty: $('#taskDiff').value,
+    points: Math.max(0, parseInt($('#taskPoints').value) || 0),
+    deadline: $('#taskDeadline').value,
+    tag: $('#taskTag').value.trim()
+  };
+  if (id) Object.assign(S.tasks.find(x => x.id === +id), data);
+  else S.tasks.unshift({ id:uid(), ...data, done:false, createdAt:new Date().toISOString() });
+  save(); refreshTasks(); renderStats();
+  $('#taskModal').classList.remove('show'); toast(id?'已更新':'已添加');
+}
+function deleteTask(id){
+  const t = S.tasks.find(x => x.id === id);
+  if (!t) return;
+  if (!confirm(`确定删除任务「${t.name}」吗？`)) return;
+  if (t.done) addPoints(-t.points, `删除已完成任务：${t.name}`);
+  S.tasks = S.tasks.filter(x => x.id !== id);
+  save(); refreshTasks(); renderStats(); toast('已删除');
+}
+function deleteTaskFromEdit(){
+  const id = +$('#taskId').value;
+  if (!id) return;
+  $('#taskModal').classList.remove('show');
+  deleteTask(id);
+}
+
+function bindTaskClick(){
+  $('.quad-grid').addEventListener('click', e => {
+    const card = e.target.closest('.task');
+    if (!card) return;
+    const id = +card.dataset.id;
+    if (e.target.closest('.check')) toggleTask(id);
+    else openTaskModal(id);
+  });
+  $('#taskListGrouped').addEventListener('click', e => {
+    const row = e.target.closest('.list-row');
+    if (!row) return;
+    const id = +row.dataset.id;
+    if (e.target.closest('.check')) toggleTask(id);
+    else openTaskModal(id);
+  });
+}
+
+let dragId = null;
+function bindDragGlobal(){
+  document.addEventListener('dragstart', e => {
+    const c = e.target.closest('.task, .list-row');
+    if (!c || !c.dataset.id) return;
+    dragId = +c.dataset.id;
+    c.classList.add('dragging');
+  });
+  document.addEventListener('dragend', () => {
+    $$('.dragging').forEach(x => x.classList.remove('dragging'));
+    $$('.over').forEach(x => x.classList.remove('over'));
+  });
+  document.addEventListener('dragover', e => {
+    const zone = e.target.closest('.quad, .list-group');
+    if (!zone) return;
+    e.preventDefault();
+    $$('.quad.over, .list-group.over').forEach(x => { if (x !== zone) x.classList.remove('over'); });
+    zone.classList.add('over');
+  });
+  document.addEventListener('drop', e => {
+    const zone = e.target.closest('.quad, .list-group');
+    if (!zone) return;
+    e.preventDefault();
+    $$('.over').forEach(x => x.classList.remove('over'));
+    const quad = zone.dataset.quad;
+    const t = S.tasks.find(x => x.id === dragId);
+    if (t && quad && t.quadrant !== quad) { t.quadrant = quad; save(); refreshTasks(); }
+  });
+}
+
+/* ========== 项目 ========== */
+function renderProjects(){
+  const box = $('#projectList');
+  if (!S.projects.length) { box.innerHTML = '<p class="empty" style="padding:50px 0">暂无项目，点击上方按钮创建</p>'; return; }
+  box.innerHTML = S.projects.map(p => {
+    const done = p.subs.filter(s => s.done).length;
+    const total = p.subs.length;
+    const pct = total ? Math.round(done/total*100) : 0;
+    const dateText = [p.start && '开始 '+p.start, p.deadline && '截止 '+p.deadline].filter(Boolean).join(' → ');
+    return `<div class="card project ${p.done?'done':''}" data-pid="${p.id}">
+      <h4>${esc(p.name)} ${p.done?'<span class="chip">已完成</span>':''}</h4>
+      ${dateText?`<p class="muted">${dateText}</p>`:''}
+      ${p.desc?`<p class="muted" style="margin-top:5px">${esc(p.desc)}</p>`:''}
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <p class="muted">子项进度 ${done}/${total} · ${pct}%</p>
+      <div class="subs">
+        ${p.subs.map((s,i) => `
+          <div class="sub ${s.done?'done':''}">
+            <button class="check ${s.done?'on':''}" data-sub="${i}"></button>
+            <span style="flex:1">${esc(s.name)}</span>
+            <button class="muted" data-delsub="${i}" style="font-size:16px">×</button>
+          </div>`).join('')}
+      </div>
+      <div class="acts">
+        <button class="btn ghost" data-act="addsub">＋ 子项</button>
+        <button class="btn ghost" data-act="toggle">${p.done?'恢复':'完成'}</button>
+        <button class="btn ghost" data-act="edit">编辑</button>
+        <button class="btn ghost danger" data-act="del">删除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function bindProjectEvents(){
+  $('#projectList').addEventListener('click', e => {
+    const card = e.target.closest('.project');
+    if (!card) return;
+    const p = S.projects.find(x => x.id === +card.dataset.pid);
+    if (!p) return;
+    const subToggle = e.target.closest('[data-sub]');
+    if (subToggle) { p.subs[+subToggle.dataset.sub].done = !p.subs[+subToggle.dataset.sub].done; save(); renderProjects(); return; }
+    const subDel = e.target.closest('[data-delsub]');
+    if (subDel) { p.subs.splice(+subDel.dataset.delsub, 1); save(); renderProjects(); return; }
+    const act = e.target.closest('[data-act]')?.dataset.act;
+    if (!act) return;
+    if (act === 'toggle') {
+      p.done = !p.done;
+      if (p.done) { addPoints(p.points, `完成项目：${p.name}`); toast(`+${p.points} 积分`); }
+      else addPoints(-p.points, `取消完成项目：${p.name}`);
+      save(); renderProjects(); renderStats();
+    } else if (act === 'addsub') {
+      const name = prompt('子项名称：');
+      if (name) { p.subs.push({ name, done:false }); save(); renderProjects(); }
+    } else if (act === 'edit') { openProjectModal(p); }
+    else if (act === 'del') {
+      if (confirm('确定删除此项目吗？')) { S.projects = S.projects.filter(x => x.id !== p.id); save(); renderProjects(); }
+    }
+  });
+}
+function openProjectModal(p){
+  const isNew = !p;
+  $('#projectModalTitle').textContent = isNew ? '新建项目' : '编辑项目';
+  $('#projectId').value = p ? p.id : '';
+  $('#projectName').value = p ? p.name : '';
+  $('#projectStart').value = p ? (p.start||'') : '';
+  $('#projectDeadline').value = p ? (p.deadline||'') : '';
+  $('#projectPoints').value = p ? p.points : 20;
+  $('#projectDesc').value = p ? (p.desc||'') : '';
+  $('#projectModal').classList.add('show');
+}
+function saveProject(){
+  const name = $('#projectName').value.trim();
+  if (!name) return toast('请输入项目名称');
+  const id = $('#projectId').value;
+  const data = {
+    name,
+    start: $('#projectStart').value,
+    deadline: $('#projectDeadline').value,
+    points: Math.max(0, parseInt($('#projectPoints').value) || 0),
+    desc: $('#projectDesc').value.trim()
+  };
+  if (id) Object.assign(S.projects.find(x => x.id === +id), data);
+  else S.projects.unshift({ id:uid(), ...data, done:false, subs:[] });
+  save(); renderProjects(); $('#projectModal').classList.remove('show'); toast('已保存');
+}
+
+/* ========== 日历 ========== */
+let calDate = new Date();
+function renderCalendar(){
+  const y = calDate.getFullYear(), m = calDate.getMonth();
+  $('#calTitle').textContent = `${y} 年 ${m+1} 月`;
+  const first = new Date(y, m, 1).getDay();
+  const days = new Date(y, m+1, 0).getDate();
+  const ts = todayStr();
+  let html = ['日','一','二','三','四','五','六'].map(d => `<div class="dow">${d}</div>`).join('');
+  for (let i = 0; i < first; i++) html += '<div></div>';
+  for (let d = 1; d <= days; d++) {
+    const ds = `${y}-${pad(m+1)}-${pad(d)}`;
+    const hasTask = S.tasks.some(t => !t.done && t.deadline && t.deadline.startsWith(ds));
+    const hasProj = S.projects.some(p => !p.done && p.deadline === ds);
+    const hasHabit = S.habits.some(h => habitOccursOn(h, new Date(y,m,d)));
+    const dot = (hasTask || hasProj || hasHabit) ? '<i class="dot"></i>' : '';
+    html += `<div class="cal-day ${ds===ts?'today':''}" data-date="${ds}"><span>${d}</span>${dot}</div>`;
+  }
+  $('#calGrid').innerHTML = html;
+}
+function habitOccursOn(h, d){
+  if (!h) return false;
+  if (h.repeatType === 'weekly') return Array.isArray(h.weekDays) && h.weekDays.includes(d.getDay());
+  if (h.repeatType === 'monthly') return h.monthDay === d.getDate();
+  if (h.repeatType === 'once') return h.onceDate && ymd(d) === h.onceDate;
+  if (h.repeatType === 'range') {
+    if (!h.startDate && !h.endDate) return true;
+    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (h.startDate) { const s = new Date(h.startDate+'T00:00:00'); if (!isNaN(s.getTime()) && day < s) return false; }
+    if (h.endDate) { const e = new Date(h.endDate+'T23:59:59'); if (!isNaN(e.getTime()) && day > e) return false; }
+    return true;
+  }
+  return true;
+}
+function openDayModal(ds){
+  const d = new Date(ds + 'T12:00:00');
+  const wd = ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  $('#dayTitle').textContent = `${ds} ${wd}`;
+  const dayTasks = S.tasks.filter(t => t.deadline && t.deadline.startsWith(ds));
+  const dayProjs = S.projects.filter(p => p.deadline === ds);
+  const habitsToCheck = S.habits.filter(h => habitOccursOn(h, d) && !h.checkins.includes(ds));
+  let html = '';
+  if (dayTasks.length) {
+    html += `<h4 style="font-size:13px;color:var(--accent);margin:12px 0 8px">当日任务 (${dayTasks.length})</h4>`;
+    html += dayTasks.map(t => `
+      <div class="task ${t.done?'done':''}" style="cursor:pointer" data-daytask="${t.id}">
+        <button class="check ${t.done?'on':''}"></button>
+        <div class="grow"><div class="name">${esc(t.name)}</div>
+        <div class="meta"><span class="muted">${t.deadline.slice(11,16)}</span></div></div>
+      </div>`).join('');
+  }
+  if (dayProjs.length) {
+    html += `<h4 style="font-size:13px;color:var(--accent);margin:14px 0 8px">项目截止 (${dayProjs.length})</h4>`;
+    html += dayProjs.map(p => `<div class="card" style="padding:10px;margin-bottom:7px"><b style="font-size:13px">${esc(p.name)}</b><p class="muted" style="margin-top:3px">${p.done?'已完成':'进行中'}</p></div>`).join('');
+  }
+  if (habitsToCheck.length) {
+    html += `<h4 style="font-size:13px;color:var(--accent);margin:14px 0 8px">习惯打卡</h4>`;
+    html += habitsToCheck.map(h => `
+      <div class="card" style="padding:10px;margin-bottom:7px;display:flex;align-items:center;gap:10px">
+        <button class="check" data-dayhabit="${h.id}" data-dayhabitdate="${ds}"></button>
+        <span style="flex:1;font-size:13px">${esc(h.name)}</span>
+        <span class="chip">+${h.points}</span>
+      </div>`).join('');
+  }
+  if (!html) html = '<p class="empty" style="padding:30px 0">当天没有安排</p>';
+  $('#dayContent').innerHTML = html;
+  $('#dayModal').classList.add('show');
+}
+function bindDayModal(){
+  $('#dayContent').addEventListener('click', e => {
+    const t = e.target.closest('[data-daytask]');
+    if (t) { toggleTask(+t.dataset.daytask); openDayModal($('#dayTitle').textContent.slice(0,10)); return; }
+    const h = e.target.closest('[data-dayhabit]');
+    if (h) { checkHabitOnDate(+h.dataset.dayhabit, h.dataset.dayhabitdate); openDayModal($('#dayTitle').textContent.slice(0,10)); }
+  });
+}
+
+/* ========== 习惯 ========== */
+function habitStreak(h){
+  let n = 0, d = new Date();
+  while (h.checkins.includes(ymd(d))) { n++; d.setDate(d.getDate()-1); }
+  return n;
+}
+function renderHabits(){
+  const box = $('#habitList');
+  if (!S.habits.length) { box.innerHTML = '<p class="empty" style="padding:50px 0">暂无习惯，点击上方按钮创建</p>'; return; }
+  const today = todayStr();
+  box.innerHTML = S.habits.map(h => {
+    const checked = h.checkins.includes(today);
+    const streak = habitStreak(h);
+    let repeatDesc = '每日';
+    if (h.repeatType === 'weekly' && h.weekDays && h.weekDays.length) {
+      const wn = ['日','一','二','三','四','五','六'];
+      repeatDesc = '每周 ' + h.weekDays.slice().sort((a,b)=>a-b).map(d => wn[d]).join('、');
+    } else if (h.repeatType === 'monthly') repeatDesc = '每月 ' + h.monthDay + ' 号';
+    else if (h.repeatType === 'once') repeatDesc = '单次 ' + (h.onceDate||'');
+    else if (h.repeatType === 'range') repeatDesc = `${h.startDate||''} ~ ${h.endDate||''}`;
+    const timeDesc = h.startTime ? ` · ${h.startTime}${h.endTime?'~'+h.endTime:''}` : '';
+    return `<div class="card habit" data-hid="${h.id}">
+      <button class="check ${checked?'on':''}" data-act="check"></button>
+      <div class="info">
+        <b>${esc(h.name)}</b>
+        <span>${repeatDesc}${timeDesc} · 连续 ${streak} 天 · 累计 ${h.checkins.length} 次 · +${h.points} 积分</span>
+      </div>
+      <button class="btn ghost" data-act="edit">编辑</button>
+      <button class="btn ghost danger" data-act="del">删除</button>
+    </div>`;
+  }).join('');
+}
+function checkHabit(id){
+  const h = S.habits.find(x => x.id === id);
+  if (!h) return;
+  const t = todayStr();
+  const i = h.checkins.indexOf(t);
+  if (i >= 0) { h.checkins.splice(i,1); addPoints(-h.points, `取消打卡：${h.name}`); }
+  else { h.checkins.push(t); addPoints(h.points, `习惯打卡：${h.name}`); toast(`+${h.points} 积分`); }
+  save(); renderHabits(); renderStats();
+}
+function checkHabitOnDate(id, dateStr){
+  const h = S.habits.find(x => x.id === id);
+  if (!h) return;
+  const i = h.checkins.indexOf(dateStr);
+  if (i >= 0) { h.checkins.splice(i,1); addPoints(-h.points, `取消打卡：${h.name}`); }
+  else { h.checkins.push(dateStr); addPoints(h.points, `习惯打卡：${h.name}`); toast(`+${h.points} 积分`); }
+  save(); renderHabits(); renderStats();
+}
+function bindHabitEvents(){
+  $('#habitList').addEventListener('click', e => {
+    const card = e.target.closest('.habit');
+    if (!card) return;
+    const id = +card.dataset.hid;
+    const act = e.target.closest('[data-act]')?.dataset.act;
+    if (act === 'check') checkHabit(id);
+    else if (act === 'edit') { const h = S.habits.find(x => x.id === id); openHabitModal(h); }
+    else if (act === 'del') {
+      if (confirm('确定删除该习惯吗？')) { S.habits = S.habits.filter(x => x.id !== id); save(); renderHabits(); renderStats(); toast('已删除'); }
+    }
+  });
+}
+function toggleHabitRepeatOptions(){
+  const type = $('#habitRepeatType').value;
+  $('#weeklyOptions').style.display  = type === 'weekly'  ? 'block' : 'none';
+  $('#monthlyOptions').style.display = type === 'monthly' ? 'block' : 'none';
+  $('#onceOptions').style.display    = type === 'once'    ? 'block' : 'none';
+  $('#rangeOptions').style.display   = type === 'range'   ? 'block' : 'none';
+}
+function openHabitModal(h){
+  const isNew = !h;
+  $('#habitModalTitle').textContent = isNew ? '新建习惯' : '编辑习惯';
+  $('#habitDelete').style.display = isNew ? 'none' : 'inline-flex';
+  $('#habitId').value = h ? h.id : '';
+  $('#habitName').value = h ? h.name : '';
+  $('#habitPoints').value = h ? h.points : 5;
+  $('#habitRepeatType').value = h ? (h.repeatType||'daily') : 'daily';
+  $$('.habit-week').forEach(cb => cb.checked = false);
+  if (h && h.repeatType === 'weekly' && h.weekDays) $$('.habit-week').forEach(cb => cb.checked = h.weekDays.includes(parseInt(cb.value)));
+  $('#habitMonthDay').value = h && h.monthDay ? h.monthDay : 1;
+  $('#habitOnceDate').value = h ? (h.onceDate||'') : '';
+  $('#habitStartDate').value = h ? (h.startDate||'') : '';
+  $('#habitEndDate').value = h ? (h.endDate||'') : '';
+  $('#habitStartTime').value = h ? (h.startTime||'') : '';
+  $('#habitEndTime').value = h ? (h.endTime||'') : '';
+  toggleHabitRepeatOptions();
+  $('#habitModal').classList.add('show');
+}
+function saveHabit(){
+  const name = $('#habitName').value.trim();
+  if (!name) return toast('请输入习惯名称');
+  const id = $('#habitId').value;
+  const type = $('#habitRepeatType').value;
+  const onceDate = $('#habitOnceDate').value;
+  const startDate = $('#habitStartDate').value;
+  const endDate = $('#habitEndDate').value;
+  if (type === 'weekly' && !$$('.habit-week:checked').length) return toast('请至少选择一天星期');
+  if (type === 'once' && !onceDate) return toast('请选择指定日期');
+  if (type === 'range' && (!startDate || !endDate)) return toast('请选择开始和截止日期');
+  if (type === 'range' && startDate > endDate) return toast('开始日期不能晚于截止日期');
+  const data = {
+    name,
+    points: Math.max(0, parseInt($('#habitPoints').value) || 0),
+    repeatType: type,
+    weekDays: type === 'weekly' ? $$('.habit-week:checked').map(cb => parseInt(cb.value)) : null,
+    monthDay: type === 'monthly' ? parseInt($('#habitMonthDay').value) || 1 : null,
+    onceDate: type === 'once' ? onceDate : null,
+    startDate: type === 'range' ? startDate : null,
+    endDate: type === 'range' ? endDate : null,
+    startTime: $('#habitStartTime').value || '',
+    endTime: $('#habitEndTime').value || ''
+  };
+  if (id) Object.assign(S.habits.find(x => x.id === +id), data);
+  else S.habits.push({ id:uid(), ...data, checkins:[] });
+  save(); renderHabits(); renderCalendar(); $('#habitModal').classList.remove('show'); toast('已保存');
+}
+
+/* ========== 统计 ========== */
+function renderStats(){
+  $('#stTasks').textContent    = S.tasks.filter(t => t.done).length;
+  $('#stPoints').textContent   = S.points;
+  $('#stProjects').textContent = S.projects.length;
+  $('#stChecks').textContent   = S.habits.reduce((s,h) => s + h.checkins.length, 0);
+}
+
+/* ========== 初始化 ========== */
+function init(){
+  applyTheme();
+  renderHeader();
+  renderTasks();
+  renderTaskList();
+  renderProjects();
+  renderCalendar();
+  renderHabits();
+  renderStats();
+  switchTab(S.tab || 'plan');
+
+  $$('.tab').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+
+  $('#themeBtn').onclick = () => { S.theme = S.theme === 'dark' ? 'light' : 'dark'; save(); applyTheme(); };
+  $('#colorBtn').onclick = () => $('#colorModal').classList.add('show');
+  $('#colorPicker').innerHTML = ACCENTS.map(c => `<button class="accent-dot" data-color="${c}" style="background:${c}"></button>`).join('');
+  $('#colorPicker').addEventListener('click', e => {
+    const b = e.target.closest('.accent-dot');
+    if (!b) return;
+    S.accent = b.dataset.color; save(); applyTheme();
+  });
+
+  $('#pointsBadge').onclick = openPointsModal;
+  $('#editTotalBtn').onclick = editTotalPoints;
+  $('#pointsLogList').addEventListener('click', e => {
+    const editId = e.target.closest('[data-editlog]')?.dataset.editlog;
+    if (editId) return editPointsLog(+editId);
+    const delId = e.target.closest('[data-dellog]')?.dataset.dellog;
+    if (delId) return deletePointsLog(+delId);
+  });
+
+  $('#addTaskBtn').onclick = () => openTaskModal();
+  $('#addTaskBtn2').onclick = () => openTaskModal();
+  $('#taskSave').onclick = saveTask;
+  $('#taskDelete').onclick = deleteTaskFromEdit;
+  $('#taskSearch').oninput = renderTasks;
+  $('#taskSearch2').oninput = renderTaskList;
+  $('#listSort').onchange = e => { listSort = e.target.value; renderTaskList(); };
+  $('#taskHistoryBtn').onclick = openTaskHistoryModal;
+  $('#taskHistoryBtn2').onclick = openTaskHistoryModal;
+  $('#shopBtn').onclick = openShopModal;
+  $('#shopBtn2').onclick = openShopModal;
+
+  bindTaskClick();
+  bindDragGlobal();
+
+  $('#taskHistoryList').addEventListener('click', e => {
+    const restoreId = e.target.closest('[data-restore]')?.dataset.restore;
+    if (restoreId) return restoreTask(+restoreId);
+    const editId = e.target.closest('[data-editth]')?.dataset.editth;
+    if (editId) { $('#taskHistoryModal').classList.remove('show'); return openTaskModal(+editId); }
+    const delId = e.target.closest('[data-delth]')?.dataset.delth;
+    if (delId) return deleteHistoryTask(+delId);
+  });
+
+  $('#addShopBtn').onclick = () => openRewardModal();
+  $('#rewardSave').onclick = saveReward;
+  $('#rewardDelete').onclick = deleteReward;
+  $('#shopList').addEventListener('click', e => {
+    const editId = e.target.closest('[data-editshop]')?.dataset.editshop;
+    if (editId) return openRewardModal(+editId);
+    const delId = e.target.closest('[data-delshop]')?.dataset.delshop;
+    if (delId) return deleteRewardById(+delId);
+    const redeemId = e.target.closest('[data-redeem]')?.dataset.redeem;
+    if (redeemId) return redeemItem(+redeemId);
+  });
+  $('#redeemHistory').addEventListener('click', e => {
+    const editIdx = e.target.closest('[data-editredeem]')?.dataset.editredeem;
+    if (editIdx !== undefined) return openRedeemModal(+editIdx);
+    const delIdx = e.target.closest('[data-delredeem]')?.dataset.delredeem;
+    if (delIdx !== undefined) return deleteRedeemById(+delIdx);
+  });
+  $('#redeemSave').onclick = saveRedeem;
+  $('#redeemDelete').onclick = deleteRedeem;
+
+  $('#addProjectBtn').onclick = () => openProjectModal();
+  $('#projectSave').onclick = saveProject;
+  bindProjectEvents();
+
+  $('#prevMonth').onclick = () => { calDate.setMonth(calDate.getMonth()-1); renderCalendar(); };
+  $('#nextMonth').onclick = () => { calDate.setMonth(calDate.getMonth()+1); renderCalendar(); };
+  $('#calGrid').addEventListener('click', e => { const c = e.target.closest('.cal-day'); if (c) openDayModal(c.dataset.date); });
+  bindDayModal();
+
+  $('#addHabitBtn').onclick = () => openHabitModal();
+  $('#habitSave').onclick = saveHabit;
+  $('#habitDelete').onclick = () => {
+    const id = +$('#habitId').value;
+    if (!id || !confirm('确定删除该习惯吗？')) return;
+    S.habits = S.habits.filter(x => x.id !== id);
+    save(); renderHabits(); renderStats();
+    $('#habitModal').classList.remove('show');
+  };
+  $('#habitRepeatType').onchange = toggleHabitRepeatOptions;
+  bindHabitEvents();
+
+  document.addEventListener('click', e => {
+    if (e.target.dataset.close !== undefined) e.target.closest('.modal').classList.remove('show');
+    if (e.target.classList.contains('modal')) e.target.classList.remove('show');
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') $$('.modal.show').forEach(m => m.classList.remove('show')); });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
